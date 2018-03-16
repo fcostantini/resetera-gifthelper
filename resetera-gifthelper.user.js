@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.1
+// @version      0.2
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        https://*.resetera.com/threads/*
+// @match        https://*.resetera.com/conversations/*
 // @require      http://code.jquery.com/jquery-latest.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
 // @connect      api.steampowered.com
 // @connect      steamcommunity.com
 // @grant        GM_xmlhttpRequest
@@ -15,7 +17,7 @@
 /* global $ GM_info GM_xmlhttpRequest*/
 var ownedGames = JSON.parse(localStorage.getItem("giftHelper_steamGameList")) || [];
 var lastUpdate = localStorage.getItem("giftHelper_steamGameListUpdatedOn") || "";
-var gifBotUrl = "https://www.resetera.com/conversations/add?to=GiftBot&title=entry";
+var giftBotUrl = "https://www.resetera.com/conversations/add?to=GiftBot&title=entry";
 var giftBotPosts = $("[data-author='GiftBot']");
 var allPosts = giftBotPosts;
 var storeUrl = "http://store.steampowered.com/search/?term=";
@@ -71,7 +73,7 @@ function clickHandler(event) {
     event.preventDefault();
     localStorage.setItem("giftHelper_raffleLine", elem.data("giftbotline"));
     localStorage.setItem("giftHelper_raffleName", elem.data("giftbotname"));
-    window.location.href = modBotUrl;
+    window.location.href = giftBotUrl;
 }
 
 /**
@@ -144,25 +146,23 @@ function matchGames() {
                             "title='Click me to visit the Steam store page of your game' " +
                             "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" + "</span>"
                         ));
-                } /*else {
-                    if (!/Taken by/.test(line)) {
-                        $elem.html(
-                            $elem.html().replace(
-                                escapeHtml(name),
-                                "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
-                                "title='Click me to message GiftBot' " +
-                                "data-modbotname='" + escapeSingleQuote(name) + "' " +
-                                "href='" + modBotUrl + "'>" +
-                                "<span class='sendPMFlag'> MESSAGE &nbsp;&nbsp</span>" +
-                                "</a>" +
-                                "<span class='sendPMText'>" +
-                                "<a class='visitSteamStorePage' " +
-                                "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
-                                "</span>"
-                            ));
-                    }
-                }*/
+                } else {
+                    $elem.html(
+                        $elem.html().replace(
+                            escapeHtml(name),
+                            "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
+                            "title='Click me to message GiftBot' " +
+                            "data-giftbotname='" + escapeSingleQuote(name) + "' " +
+                            "href='" + giftBotUrl + "'>" +
+                            "<span class='sendPMFlag'> MESSAGE &nbsp;&nbsp</span>" +
+                            "</a>" +
+                            "<span class='sendPMText'>" +
+                            "<a class='visitSteamStorePage' " +
+                            "title='Click me to visit the Steam store' " +
+                            "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
+                            "</span>"
+                        ));
+                }
             }
         });
 
@@ -371,15 +371,16 @@ function init() {
 
                     matchGames();
                 });*/
-            } /*else if (/private/.test(href)) {
+            } else if (/conversations/.test(href)) {
                 if (raffleLine) {
-                    $("input[name='title']").val("Giveaway" + " - " + raffleName);
-                    $("textarea[name='message']").val(raffleLine);
+                    console.log($("iframe").contents().find('body').length);
+                    _.delay(function() {$("iframe").contents().find('body').html(raffleLine);}, 200);
                     localStorage.removeItem("giftHelper_raffleLine");
                     localStorage.removeItem("giftHelper_raffleName");
                 }
-            }*/
+            }
         }
+
     });
 }
 
