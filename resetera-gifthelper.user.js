@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.9.2
+// @version      0.9.3
 // @description  Helper functions for ResetEra's GiftBot posts
-// @match        https://*.resetera.com/threads/*
-// @match        https://*.resetera.com/conversations/add?to=GiftBot*
+// @match        *://*.resetera.com/threads/*
+// @match        *://*.resetera.com/conversations/add?to=GiftBot*
 // @require      http://code.jquery.com/jquery-latest.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
 // @connect      api.steampowered.com
