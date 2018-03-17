@@ -6,11 +6,11 @@ A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT fo
 - "In library" highlighting for raffles
 
 ## How-to use
-1. Download [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) (Firefox) or [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en) (Chrome)
-2. Open [this link](https://github.com/fcostantini/resetera-gifthelper/raw/master/resetera-gifthelper.user.js). *Monkey should prompt you for install.
-3. Navigate to any ResetEra thread (e.g. https://www.resetera.com/threads/steam-march-2018-sensible-chuchel.26449/)
-4. Follow the instructions prompted to you: ResetEra should now prompt you for your Steam profile name and the Steam API key...
-5. ... and start collecting games!
+1. You must create a custom url for your Steam profile. Go to your profile, click "Edit profile" and you should see a field to input your desired custom id.
+2. Download [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) (Firefox) or [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en) (Chrome)
+3. Open [this link](https://github.com/fcostantini/resetera-gifthelper/raw/master/resetera-gifthelper.user.js). *Monkey should prompt you for install.
+4. Navigate to any ResetEra thread (e.g. https://www.resetera.com/threads/steam-march-2018-sensible-chuchel.26449/)
+5. Follow the instructions prompted to you: ResetEra should now prompt you for your Steam custom id and the Steam API key.
 
 ## FAQ
 ### Where to get a SteamAPI key?
