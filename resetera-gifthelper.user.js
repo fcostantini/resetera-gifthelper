@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.9
+// @version      0.9.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        https://*.resetera.com/threads/*
 // @match        https://*.resetera.com/conversations/add?to=GiftBot*
@@ -27,8 +27,8 @@ var lastWholeGameListUpdate = localStorage.getItem("giftHelper_steamGameWholeLis
 
 /**
  * Sanitizes names of the games
- * @param {string} name - Name of the game
- * @returns {string} - sanitized name
+ * @param   {string} name Name of the game
+ * @returns {string} sanitized name
  */
 function sanitizeName(name) {
     //Note: this will break games with "steam" in its name
@@ -37,9 +37,9 @@ function sanitizeName(name) {
 
 /**
  * Checks if user owns the game on steam
- * @param {string} - name Name of the game
- * @param {line} - line Modbot line of the game
- * @returns {boolean} - true if owned, false if not
+ * @param   {string}  name Name of the game
+ * @param   {line}    line Modbot line of the game
+ * @returns {boolean} true if owned, false if not
  */
 function checkIfOwnedOnSteam(name, line) {
     var owned = ownedGames.indexOf(sanitizeName(name)) !== -1;
@@ -108,22 +108,37 @@ function escapeSingleQuote(text) {
 }
 
 /**
+  * From https://stackoverflow.com/a/23326020
+  * Global replace, escaping characters in regex
+  */
+
+String.prototype.replaceAll = function(s1, s2) {
+    return this.replace(new RegExp(s1.replace(/[.^$*+?()[{\|]/g, '\\$&'), 'g'),
+                        s2 );
+};
+
+/**
  * Matches games from the modpot posts and replaces the markup on the page
  */
 function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
         var text = $elem.text();
-        var html = $elem.html();
         var takenSpan = $elem.find("span").filter(function (index) {return $(this).css("text-decoration")=="line-through";});
         var taken = takenSpan.get().map(function (elem) {$(elem).css("text-decoration", "none"); return elem.innerText.replace('  ', ' ');});
         var giveaways = text.match(/^ *(.*\b(?:GB-)\b.*)/gmi);
+        var map = {};
 
         Object.keys(giveaways || {}).forEach(function mapGiveaways(key) {
             var line = giveaways[key].replace('  ', ' ');
             var split = line.split("--");
             var name = split[0].trim();
             var code = split[1].trim();
+
+            //Avoid processing games more than once
+            if (map[name]) {
+                return;
+            }
 
             var urlToShow = storeUrl + name;
 
@@ -133,9 +148,11 @@ function matchGames() {
                 urlToShow = storePageUrl + game.appid;
             }
 
+            map[name] = true;
+
             if (_.contains(taken, line)) {
                 $elem.html(
-                    $elem.html().replace(
+                    $elem.html().replaceAll(
                         escapeHtml(name),
                         "<span class='takenFlag'>&nbsp;CLAIMED &nbsp;&nbsp</span>" +
                         "<span class='takenText'>" + escapeHtml(name) + "</span>"
@@ -143,7 +160,7 @@ function matchGames() {
             } else {
                 if (checkIfOwnedOnSteam(name, line)) {
                     $elem.html(
-                        $elem.html().replace(
+                        $elem.html().replaceAll(
                             escapeHtml(name),
                             "<span class='inLibraryFlag'>IN LIBRARY &nbsp;&nbsp</span>" +
                             "<span class='inLibraryText'>" +
@@ -153,7 +170,7 @@ function matchGames() {
                         ));
                 } else {
                     $elem.html(
-                        $elem.html().replace(
+                        $elem.html().replaceAll(
                             escapeHtml(name),
                             "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
                             "title='Click me to message GiftBot' " +
