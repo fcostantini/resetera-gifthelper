@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.9.4
+// @version      0.9.5
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
@@ -236,7 +236,7 @@ function getProfileName() {
     var steamProfileName = localStorage.getItem("giftHelper_steamProfileName");
 
     if (!steamProfileName) {
-        steamProfileName = window.prompt("GiftHelper says: Enter your Steam profile name");
+        steamProfileName = window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url)");
 
         if (!steamProfileName || steamProfileName === "") {
             throw new Error("Steam profile name cannot be empty or null");
