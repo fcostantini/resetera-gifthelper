@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.2.1
+// @version      0.9
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        https://*.resetera.com/threads/*
 // @match        https://*.resetera.com/conversations/add?to=GiftBot*
@@ -27,8 +27,8 @@ var lastWholeGameListUpdate = localStorage.getItem("giftHelper_steamGameWholeLis
 
 /**
  * Sanitizes names of the games
- * @param   {string} name Name of the game
- * @returns {string} sanitized name
+ * @param {string} name - Name of the game
+ * @returns {string} - sanitized name
  */
 function sanitizeName(name) {
     //Note: this will break games with "steam" in its name
@@ -37,9 +37,9 @@ function sanitizeName(name) {
 
 /**
  * Checks if user owns the game on steam
- * @param   {string}  name Name of the game
- * @param   {line}    line Modbot line of the game
- * @returns {boolean} true if owned, false if not
+ * @param {string} - name Name of the game
+ * @param {line} - line Modbot line of the game
+ * @returns {boolean} - true if owned, false if not
  */
 function checkIfOwnedOnSteam(name, line) {
     var owned = ownedGames.indexOf(sanitizeName(name)) !== -1;
@@ -114,11 +114,16 @@ function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
         var text = $elem.text();
+        var html = $elem.html();
+        var takenSpan = $elem.find("span").filter(function (index) {return $(this).css("text-decoration")=="line-through";});
+        var taken = takenSpan.get().map(function (elem) {$(elem).css("text-decoration", "none"); return elem.innerText.replace('  ', ' ');});
         var giveaways = text.match(/^ *(.*\b(?:GB-)\b.*)/gmi);
 
         Object.keys(giveaways || {}).forEach(function mapGiveaways(key) {
-            var line = giveaways[key];
-            var name = line.split("--")[0].trim();
+            var line = giveaways[key].replace('  ', ' ');
+            var split = line.split("--");
+            var name = split[0].trim();
+            var code = split[1].trim();
 
             var urlToShow = storeUrl + name;
 
@@ -128,7 +133,7 @@ function matchGames() {
                 urlToShow = storePageUrl + game.appid;
             }
 
-            if (/Taken by/.test(line)) {
+            if (_.contains(taken, line)) {
                 $elem.html(
                     $elem.html().replace(
                         escapeHtml(name),
