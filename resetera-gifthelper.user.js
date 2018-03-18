@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.1
+// @version      1.2
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -33,7 +33,7 @@ var lastWholeGameListUpdate = localStorage.getItem("giftHelper_steamGameWholeLis
  */
 function sanitizeName(name) {
     //Note: this will break games with "steam" in its name
-    return name.toLowerCase().replace(/\W+/gi, "").replace('steam', '');
+    return name.toLowerCase().replace('(steam)', '').replace(/\W+/gi, "");
 }
 
 /**
@@ -74,7 +74,9 @@ function clickHandler(event) {
     event.preventDefault();
     localStorage.setItem("giftHelper_raffleLine", elem.data("giftbotline"));
     localStorage.setItem("giftHelper_raffleName", elem.data("giftbotname"));
-    window.location.href = giftBotUrl;
+    if(event.which !== 2){
+        window.location.href = giftBotUrl;
+    }
 }
 
 /**
@@ -126,7 +128,11 @@ function matchGames() {
         var $elem = $(elem);
         var text = $elem.text();
         var takenSpan = $elem.find("span").filter(function (index) {return $(this).css("text-decoration")=="line-through";});
-        var taken = takenSpan.get().map(function (elem) {$(elem).css("text-decoration", "none"); return elem.innerText.replace('  ', ' ');});
+        var taken = takenSpan.get().map(function (elem) {
+            var colorSpan = $(elem).find("span");
+            $(colorSpan).css("color", "#aaa");
+            return elem.innerText.replace('  ', ' ');
+        });
         var giveaways = text.match(/^ *(.*\b(?:GB-)\b.*)/gmi);
         var map = {};
 
@@ -191,7 +197,7 @@ function matchGames() {
 
         $(elem).replaceWith($elem);
 
-        $("[data-giftbotline]").on("click", clickHandler);
+        $("[data-giftbotline]").on("click auxclick", clickHandler);
     });
 }
 
@@ -246,7 +252,7 @@ function getProfileName() {
         localStorage.setItem("giftHelper_steamProfileName", steamProfileName);
     }
 
-    return steamProfileName;
+    return steamProfileName.trim();
 }
 
 /**
