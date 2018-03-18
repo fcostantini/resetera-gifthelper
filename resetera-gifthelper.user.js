@@ -386,16 +386,13 @@ function init() {
                     matchGames();
                 }
 
-                //TODO: figure out how to integrate Live Thread
-                /*document.addEventListener("LiveThreadUpdate", function updateLiveThread() {
+                document.addEventListener("LiveThreadUpdate", function updateLiveThread() {
                     giftBotPosts = $("[data-author='GiftBot']");
-                    allPosts = giftBotPosts.add(modBotSelfPosts);
-
+                    allPosts = giftBotPosts;
                     matchGames();
-                });*/
+                });
             } else if (/conversations/.test(href)) {
                 if (raffleLine) {
-                    console.log($("iframe").contents().find('body').length);
                     _.delay(function() {$("iframe").contents().find('body').html(raffleLine);}, 200);
                     localStorage.removeItem("giftHelper_raffleLine");
                     localStorage.removeItem("giftHelper_raffleName");
