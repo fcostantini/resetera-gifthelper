@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.3
+// @version      1.3.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -191,7 +191,7 @@ function matchGames() {
                             "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" + "</span>"
                         ));
                 } else {
-                    if(inWishlist(name)) {
+                    if(checkIfInSteamWishlist(name)) {
                         $elem.html(
                             $elem.html().replaceAll(
                                 escapeHtml(name),
