@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.9.6
+// @version      1.0
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
