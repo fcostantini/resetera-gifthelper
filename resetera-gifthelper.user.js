@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      0.9.5
+// @version      0.9.6
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
@@ -150,7 +150,7 @@ function matchGames() {
 
             map[name] = true;
 
-            if (_.contains(taken, line)) {
+            if (_.contains(taken, line)  || /Won by/.test(line)) {
                 $elem.html(
                     $elem.html().replaceAll(
                         escapeHtml(name),
