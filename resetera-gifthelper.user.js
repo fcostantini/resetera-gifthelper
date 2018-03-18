@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.0
+// @version      1.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
+// @match        *://*.resetera.com/conversations/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
 // @require      http://code.jquery.com/jquery-latest.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
@@ -342,12 +343,13 @@ function loadAllGames() {
  * Find Steam key
  */
 function findSteamKey(href){
-    const message = $("#post_message_").text();
-    const giveaways = message.match(/\w{5}\-\w{5}\-\w{5}/);
+    const message = $("#messageList")[0];
+    const text = $(message).text();
+    const giveaways = text.match(/\w{5}\-\w{5}\-\w{5}/);
 
     giveaways.forEach(function findKey(steamKey) {
         const redeemPage = "<a href=\"https://store.steampowered.com/account/registerkey?key=" + steamKey + "\">" + steamKey + "</a>";
-        $("#post_message_").html($("#post_message_").html().replace(steamKey, redeemPage));
+        $(message).html($(message).html().replace(steamKey, redeemPage));
     });
 }
 
@@ -360,10 +362,10 @@ function init() {
     var raffleLine = localStorage.getItem("giftHelper_raffleLine");
     var raffleName = localStorage.getItem("giftHelper_raffleName");
 
-    //Run Steam key check if on private message only
-    /*if (window.location.pathname.indexOf("forum/private.php") > -1 && href !== exclude) {
+    //Run Steam key check if on win response from GiftBot
+    if (window.location.pathname.indexOf("conversations/youve-won") > -1) {
         findSteamKey(href);
-    }*/
+    }
 
     getSteamID(function performActions(steamID) {
         if (!steamID) {
