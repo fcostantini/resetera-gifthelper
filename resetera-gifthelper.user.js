@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.2
+// @version      1.3
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -9,6 +9,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
 // @connect      api.steampowered.com
 // @connect      steamcommunity.com
+// @connect      store.steampowered.com
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
 // ==/UserScript==
@@ -25,6 +26,8 @@ var storeUrl = "http://store.steampowered.com/search/?term=";
 var storePageUrl = "http://store.steampowered.com/app/";
 var allGames = JSON.parse(localStorage.getItem("giftHelper_steamGameWholeList")) || [];
 var lastWholeGameListUpdate = localStorage.getItem("giftHelper_steamGameWholeListUpdatedOn") || "";
+var wishlist = JSON.parse(localStorage.getItem("giftHelper_steamWishlist")) || [];
+var lastWishListUpdate = localStorage.getItem("giftHelper_steamWishlistUpdatedOn") || "";
 
 /**
  * Sanitizes names of the games
@@ -39,18 +42,28 @@ function sanitizeName(name) {
 /**
  * Checks if user owns the game on steam
  * @param   {string}  name Name of the game
- * @param   {line}    line Modbot line of the game
+ * @param   {line}    line GiftBot line of the game
  * @returns {boolean} true if owned, false if not
  */
 function checkIfOwnedOnSteam(name, line) {
     var owned = ownedGames.indexOf(sanitizeName(name)) !== -1;
-    return ownedGames.indexOf(sanitizeName(name)) !== -1 && !/uPlay|\(GoG\)|\(Origin\)|Desura/.test(line);
+    return owned && !/uPlay|\(GoG\)|\(Origin\)|Desura/.test(line);
+}
+
+/**
+ * Checks if user has the game in his steam wishlist
+ * @param   {string}  name Name of the game
+ * @returns {boolean} true if in wishlsit, false if not
+ */
+function checkIfInSteamWishlist(name) {
+    var inWishlist = wishlist.indexOf(sanitizeName(name)) !== -1;
+    return inWishlist;
 }
 
 /**
  * Gets a map { appid, sanitizedName } if the game exists on the Steam store
  * @param {string} name - Name of the game
- * @param {string} line - Modbot line of the game
+ * @param {string} line - GiftBot line of the game
  * @returns {object|boolean|null} - object of { appid, sanitizedName }
  *                                if the game exists on the Steam store,
  *                                false if not a Steam game, null if not found
@@ -74,6 +87,8 @@ function clickHandler(event) {
     event.preventDefault();
     localStorage.setItem("giftHelper_raffleLine", elem.data("giftbotline"));
     localStorage.setItem("giftHelper_raffleName", elem.data("giftbotname"));
+
+    //Don't change this window if middle click
     if(event.which !== 2){
         window.location.href = giftBotUrl;
     }
@@ -176,21 +191,40 @@ function matchGames() {
                             "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" + "</span>"
                         ));
                 } else {
-                    $elem.html(
-                        $elem.html().replaceAll(
-                            escapeHtml(name),
-                            "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
-                            "title='Click me to message GiftBot' " +
-                            "data-giftbotname='" + escapeSingleQuote(name) + "' " +
-                            "href='" + giftBotUrl + "'>" +
-                            "<span class='sendPMFlag'> MESSAGE &nbsp;&nbsp</span>" +
-                            "</a>" +
-                            "<span class='sendPMText'>" +
-                            "<a class='visitSteamStorePage' " +
-                            "title='Click me to visit the Steam store' " +
-                            "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
-                            "</span>"
-                        ));
+                    if(inWishlist(name)) {
+                        $elem.html(
+                            $elem.html().replaceAll(
+                                escapeHtml(name),
+                                "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
+                                "title='Click me to message GiftBot' " +
+                                "data-giftbotname='" + escapeSingleQuote(name) + "' " +
+                                "href='" + giftBotUrl + "'>" +
+                                "<span class='wishlistFlag'> WISHLIST &nbsp;&nbsp</span>" +
+                                "</a>" +
+                                "<span class='wishlistText'>" +
+                                "<a class='visitSteamStorePage' " +
+                                "title='Click me to visit the Steam store' " +
+                                "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
+                                "</span>"
+                            ));
+                    }
+                    else {
+                        $elem.html(
+                            $elem.html().replaceAll(
+                                escapeHtml(name),
+                                "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
+                                "title='Click me to message GiftBot' " +
+                                "data-giftbotname='" + escapeSingleQuote(name) + "' " +
+                                "href='" + giftBotUrl + "'>" +
+                                "<span class='sendPMFlag'> MESSAGE &nbsp;&nbsp</span>" +
+                                "</a>" +
+                                "<span class='sendPMText'>" +
+                                "<a class='visitSteamStorePage' " +
+                                "title='Click me to visit the Steam store' " +
+                                "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
+                                "</span>"
+                            ));
+                    }
                 }
             }
         });
@@ -344,6 +378,39 @@ function loadAllGames() {
         }
     });
 }
+
+/**
+ * Handles the loading of the wishlist
+ */
+function loadWishlist() {
+    var url = "http://store.steampowered.com/dynamicstore/userdata";
+
+    GM_xmlhttpRequest({ // eslint-disable-line new-cap
+        method: "GET",
+        url: url,
+        onload: function onLoad(response) {
+            processWishlist(JSON.parse(response.responseText).rgWishlist);
+        },
+        onerror: function onError() {
+            console.error("GiftHelper - Retrieving wishlist failed. Try again later");
+        }
+    });
+}
+
+/*
+ * Associates the appids with their names
+ * @param {object} appids - Array of wishlist appids
+ */
+function processWishlist(appids) {
+    var wishlist = allGames.filter(function (game){
+        return _.contains(appids, game.appid);
+    }).map(function (game) {return game.sanitizedName;});
+
+    localStorage.setItem("giftHelper_steamWishlist", JSON.stringify(wishlist));
+    localStorage.setItem("giftHelper_steamWishlistUpdatedOn", new Date().toDateString());
+    localStorage.setItem("giftHelper_version", GM_info.script.version); // jshint ignore:line
+}
+
 /**
 /**
  * Find Steam key
@@ -373,6 +440,8 @@ function init() {
         findSteamKey(href);
     }
 
+    loadWishlist();
+
     getSteamID(function performActions(steamID) {
         if (!steamID) {
             throw new Error("There's no SteamID, aborting...");
@@ -384,6 +453,12 @@ function init() {
                     new Date().toDateString() !== lastWholeGameListUpdate ||
                     localStorage.getItem("giftHelper_version") !== GM_info.script.version) {
                     loadAllGames();
+                }
+
+                if (!wishlist.length ||
+                    new Date().toDateString() !== lastWishListUpdate ||
+                    localStorage.getItem("giftHelper_version") !== GM_info.script.version) {
+                    loadWishlist();
                 }
 
                 if (!ownedGames.length ||
@@ -425,8 +500,9 @@ init();
     style.type = "text/css";
     var inLibraryFlag = ".inLibraryFlag {background: url(' data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAKCAYAAABi8KSDAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUNDNzBFNTUyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUNDNzBFNTYyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5Q0M3MEU1MzIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5Q0M3MEU1NDIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pv3vUKAAAAAlSURBVHjaYvz//z8DsYARpFhISAivjnfv3jGSp3jUGeQ4AyDAADZHNe2nyOBrAAAAAElFTkSuQmCC') no-repeat 4px 4px #4F95BD; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .inLibraryText { opacity: 0.7; }"; // eslint-disable-line
     var sendPMFlag = ".sendPMFlag {background: url('  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAS0lEQVR4nGNgIAFMZmBg+E8At8AUn8Sj6AxM0TE8is9D5Q4zQAWwKUZW9J8BSQJZMboiFIXIitEV/WeEqSYEmBgYGHYQoY4YNRAAAPorL+vMPrX1AAAAAElFTkSuQmCC') no-repeat 4px 4px #FFA500; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .sendPMText { opacity: 1; } .sendGiftBotMessage{ padding: 0px !important; }"; // eslint-disable-line
+    var wishlistFlag = ".wishlistFlag {background: url('  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAS0lEQVR4nGNgIAFMZmBg+E8At8AUn8Sj6AxM0TE8is9D5Q4zQAWwKUZW9J8BSQJZMboiFIXIitEV/WeEqSYEmBgYGHYQoY4YNRAAAPorL+vMPrX1AAAAAElFTkSuQmCC') no-repeat 4px 4px #00FF00; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .wishlistText { opacity: 1; } .sendGiftBotMessage{ padding: 0px !important; }"; // eslint-disable-line
     var takenFlag = ".takenFlag {background: url('   data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTczbp9jAAAAfElEQVQoU12OSwqAMAwFvYQg9P43KLhy60oQBEHwMM9MaUpMYDCfkb5J0mpsxmwwR9hxWxkug+IbZfpxY1GMt43SbSwdeopb8b+RH4NCcIkdt8nFLFNDgijG5yiP8RNzppy5iVHy53LmBfFoY8rUe5dPFtVAHnkC7HZJ9QOjA1ppSV8PVQAAAABJRU5ErkJggg==') no-repeat 4px 4px #6B6B6B; left: 0; top: 42px; font-size: 10px; color: #FFFFFF; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .takenText { opacity: 0.7; }"; // eslint-disable-line
 
-    style.innerHTML = inLibraryFlag + " " + sendPMFlag + " " + takenFlag;
+    style.innerHTML = inLibraryFlag + " " + sendPMFlag + " " + wishlistFlag + " " + takenFlag;
     head.appendChild(style);
 }());
