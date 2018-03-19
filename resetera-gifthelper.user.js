@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.3.1
+// @version      1.3.2
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -439,8 +439,6 @@ function init() {
     if (window.location.pathname.indexOf("conversations/youve-won") > -1) {
         findSteamKey(href);
     }
-
-    loadWishlist();
 
     getSteamID(function performActions(steamID) {
         if (!steamID) {
