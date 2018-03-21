@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.3.2
+// @version      1.4
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -88,9 +88,13 @@ function clickHandler(event) {
     localStorage.setItem("giftHelper_raffleLine", elem.data("giftbotline"));
     localStorage.setItem("giftHelper_raffleName", elem.data("giftbotname"));
 
-    //Don't change this window if middle click
-    if(event.which !== 2){
+    //Don't change this window if middle click or ctrl was pressed
+    if(event.which !== 2 && !(event.ctrlKey)){
         window.location.href = giftBotUrl;
+    }
+
+    if(event.ctrlKey){
+        window.open(giftBotUrl);
     }
 }
 
@@ -231,7 +235,7 @@ function matchGames() {
 
         $(elem).replaceWith($elem);
 
-        $("[data-giftbotline]").on("click auxclick", clickHandler);
+        $("[data-giftbotline]").off().on("click auxclick", clickHandler);
     });
 }
 
