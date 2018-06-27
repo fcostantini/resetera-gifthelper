@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.4.1
+// @version      1.5
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -140,54 +140,48 @@ String.prototype.replaceAll = function(s1, s2) {
 };
 
 /**
- * Matches games from the modpot posts and replaces the markup on the page
+ * Matches games from the giftbot posts and replaces the markup on the page
  */
 function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
+        var spans = $elem.find("span").filter(function() { return ($(this).text().indexOf('GB-') > -1) });;
         var text = $elem.text();
-        var takenSpan = $elem.find("span").filter(function (index) {return $(this).css("text-decoration")=="line-through";});
+        var takenSpan = spans.filter(function (index) {return $(this).css("text-decoration")=="line-through";});
         var taken = takenSpan.get().map(function (elem) {
             var colorSpan = $(elem).find("span");
             $(colorSpan).css("color", "#aaa");
             return elem.innerText.replace('  ', ' ');
         });
-        var giveaways = text.match(/^ *(.*\b(?:GB-)\b.*)/gmi);
-        var map = {};
 
-        Object.keys(giveaways || {}).forEach(function mapGiveaways(key) {
-            var line = giveaways[key].replace('  ', ' ').replace('Click to expand...', '');
+        _.each(spans, function(span){
+            var $span = $(span);
+            var text = $span.text();
+            var line = text.replace('  ', ' ').replace('Click to expand...', '');
             var split = line.split("--");
             var name = split[0].trim();
             var code = split[1].trim();
 
-            //Avoid processing games more than once
-            if (map[name]) {
-                return;
-            }
-
             var urlToShow = storeUrl + name;
-
             var game = getIfOnSteam(name, line);
             if (game) {
                 /** inside this block we can access the appid of the game with game.appid **/
                 urlToShow = storePageUrl + game.appid;
             }
 
-            map[name] = true;
             var escapedName = escapeHtml(name + " --");
 
-            if (_.contains(taken, line)  || /Won by/.test(line)) {
-                $elem.html(
-                    $elem.html().replaceAll(
+            if (_.contains(taken, line) || /Won by/.test(line)) {
+                $span.html(
+                    $span.html().replaceAll(
                         escapedName,
                         "<span class='takenFlag'>&nbsp;CLAIMED &nbsp;&nbsp</span>" +
                         "<span class='takenText'>" + escapeHtml(name) + " --</span>"
                     ));
             } else {
                 if (checkIfOwnedOnSteam(name, line)) {
-                    $elem.html(
-                        $elem.html().replaceAll(
+                    $span.html(
+                        $span.html().replaceAll(
                             escapedName,
                             "<span class='inLibraryFlag'>IN LIBRARY &nbsp;&nbsp</span>" +
                             "<span class='inLibraryText'>" +
@@ -197,8 +191,8 @@ function matchGames() {
                         ));
                 } else {
                     if(checkIfInSteamWishlist(name)) {
-                        $elem.html(
-                            $elem.html().replaceAll(
+                        $span.html(
+                            $span.html().replaceAll(
                                 escapedName,
                                 "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
                                 "title='Click me to message GiftBot' " +
@@ -214,8 +208,8 @@ function matchGames() {
                             ));
                     }
                     else {
-                        $elem.html(
-                            $elem.html().replaceAll(
+                        $span.html(
+                            $span.html().replaceAll(
                                 escapedName,
                                 "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
                                 "title='Click me to message GiftBot' " +
@@ -232,9 +226,8 @@ function matchGames() {
                     }
                 }
             }
-        });
-
-        $(elem).replaceWith($elem);
+            $(span).replaceWith($span);
+        })
 
         $("[data-giftbotline]").off().on("click auxclick", clickHandler);
     });
