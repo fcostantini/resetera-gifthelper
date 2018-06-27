@@ -1,17 +1,17 @@
 # ResetEra-GiftHelper
 
-A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it without much success (only some basic functions work at this moment). I even copied most of this README.
+A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
 
 ## Features
-- "In library" highlighting for raffles
+- "In library" highlighting for raffles.
 - Wishlist highlighting (must be logged in the store in the same browser).
 
 ## How-to use
 1. You must create a custom url for your Steam profile. Go to your profile, click "Edit profile" and you should see a field to input your desired custom id.
 2. Download Tampermonkey: [Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) or [Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en).
 3. Open [this link](https://github.com/fcostantini/resetera-gifthelper/raw/master/resetera-gifthelper.user.js). *Monkey should prompt you for install.
-4. Navigate to any ResetEra thread (e.g. https://www.resetera.com/threads/steam-march-2018-sensible-chuchel.26449/)
-5. Follow the instructions prompted to you: ResetEra should now prompt you for your Steam custom id and the Steam API key.
+4. Navigate to any ResetEra thread (e.g. http://thesteamthread.com/)
+5. Follow the instructions: ResetEra should now prompt you for your Steam custom id and the Steam API key.
 
 ## FAQ
 ### Where to get a SteamAPI key?
