@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.1
+// @version      2.2
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -36,7 +36,7 @@ var lastWishListUpdate = localStorage.getItem("giftHelper_steamWishlistUpdatedOn
  */
 function sanitizeName(name) {
     //Note: this will break games with "steam" in its name
-    return name.toLowerCase().replace('(steam)', '').replace(/\W+/gi, "");
+    return name.toLowerCase().replace('&', 'and').replace('(steam)', '').replace(/\W+/gi, "");
 }
 
 /**
@@ -226,6 +226,7 @@ function parseAllGames(json) {
  */
 function getProfileName() {
     var steamProfileName = localStorage.getItem("giftHelper_steamProfileName");
+    window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url). \n\nNOTE: not the complete url, only the name.")
 
     if (!steamProfileName) {
         steamProfileName = window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url)");
