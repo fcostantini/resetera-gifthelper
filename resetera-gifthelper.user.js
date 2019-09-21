@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      1.5
+// @version      2.0
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -79,26 +79,6 @@ function getIfOnSteam(name, line) {
 }
 
 /**
- * Navigate to the PM page for the game you clicked
- * @param {Event} event - Click event
- */
-function clickHandler(event) {
-    var elem = $(this);
-    event.preventDefault();
-    localStorage.setItem("giftHelper_raffleLine", elem.data("giftbotline"));
-    localStorage.setItem("giftHelper_raffleName", elem.data("giftbotname"));
-
-    //Don't change this window if middle click or ctrl was pressed
-    if(event.which !== 2 && !(event.ctrlKey)){
-        window.location.href = giftBotUrl;
-    }
-
-    if(event.ctrlKey){
-        window.open(giftBotUrl);
-    }
-}
-
-/**
   * Escape special characters to be able to treat games such as "Cosmic Dust & Rust" with a "&"
   * See: https://stackoverflow.com/questions/784586/ and http://stackoverflow.com/questions/1787322/
   *
@@ -145,91 +125,64 @@ String.prototype.replaceAll = function(s1, s2) {
 function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
-        var spans = $elem.find("span").filter(function() { return ($(this).text().indexOf('GB-') > -1) });;
-        var text = $elem.text();
-        var takenSpan = spans.filter(function (index) {return $(this).css("text-decoration")=="line-through";});
-        var taken = takenSpan.get().map(function (elem) {
-            var colorSpan = $(elem).find("span");
-            $(colorSpan).css("color", "#aaa");
-            return elem.innerText.replace('  ', ' ');
-        });
+        var nonTakenPrizes = $elem.find(".giftbot-prize").not(".giftbot-prize--won")
+        var prizes = nonTakenPrizes.find(".giftbot-prize--title");
 
-        _.each(spans, function(span){
-            var $span = $(span);
-            var text = $span.text();
+        _.each(prizes, function(prize){
+            var $prize = $(prize);
+            var text = $prize.text();
             var line = text.replace('  ', ' ').replace('Click to expand...', '');
-            var split = line.split("--");
-            var name = split[0].trim();
-            var code = split[1].trim();
+            if (text.indexOf('Steam: ') > -1) {
+                var split = line.split("Steam: ");
+                var gameName = split[1].trim();
 
-            var urlToShow = storeUrl + name;
-            var game = getIfOnSteam(name, line);
-            if (game) {
-                /** inside this block we can access the appid of the game with game.appid **/
-                urlToShow = storePageUrl + game.appid;
-            }
+                var urlToShow = storeUrl + gameName;
+                var game = getIfOnSteam(gameName, line);
+                if (game) {
+                    /** inside this block we can access the appid of the game with game.appid **/
+                    urlToShow = storePageUrl + game.appid;
+                }
 
-            var escapedName = escapeHtml(name + " --");
+                var escapedName = escapeHtml(gameName);
 
-            if (_.contains(taken, line) || /Won by/.test(line)) {
-                $span.html(
-                    $span.html().replaceAll(
-                        escapedName,
-                        "<span class='takenFlag'>&nbsp;CLAIMED &nbsp;&nbsp</span>" +
-                        "<span class='takenText'>" + escapeHtml(name) + " --</span>"
-                    ));
-            } else {
-                if (checkIfOwnedOnSteam(name, line)) {
-                    $span.html(
-                        $span.html().replaceAll(
+                if (checkIfOwnedOnSteam(gameName, line)) {
+                    $prize.html(
+                        $prize.html().replaceAll(
                             escapedName,
                             "<span class='inLibraryFlag'>IN LIBRARY &nbsp;&nbsp</span>" +
                             "<span class='inLibraryText'>" +
                             "<a class='visitSteamStorePageOwnedGame' " +
                             "title='Click me to visit the Steam store page of your game' " +
-                            "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" + " --</span>"
+                            "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" + "</span>"
                         ));
                 } else {
-                    if(checkIfInSteamWishlist(name)) {
-                        $span.html(
-                            $span.html().replaceAll(
+                    if(checkIfInSteamWishlist(gameName)) {
+                        $prize.html(
+                            $prize.html().replaceAll(
                                 escapedName,
-                                "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
-                                "title='Click me to message GiftBot' " +
-                                "data-giftbotname='" + escapeSingleQuote(name) + "' " +
-                                "href='" + giftBotUrl + "'>" +
                                 "<span class='wishlistFlag'> WISHLIST &nbsp;&nbsp</span>" +
-                                "</a>" +
                                 "<span class='wishlistText'>" +
                                 "<a class='visitSteamStorePage' " +
                                 "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
-                                " --</span>"
+                                "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" +
+                                "</span>"
                             ));
                     }
                     else {
-                        $span.html(
-                            $span.html().replaceAll(
+                        $prize.html(
+                            $prize.html().replaceAll(
                                 escapedName,
-                                "<a class='sendGiftBotMessage' data-giftbotline='" + escapeSingleQuote(line) + "' " +
-                                "title='Click me to message GiftBot' " +
-                                "data-giftbotname='" + escapeSingleQuote(name) + "' " +
-                                "href='" + giftBotUrl + "'>" +
-                                "<span class='sendPMFlag'> MESSAGE &nbsp;&nbsp</span>" +
-                                "</a>" +
-                                "<span class='sendPMText'>" +
+                                "<span class='nameWithURL'>" +
                                 "<a class='visitSteamStorePage' " +
                                 "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "/'>" + escapeHtml(name) + "</a>" +
-                                " --</span>"
+                                "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" +
+                                "</span>"
                             ));
                     }
                 }
             }
-            $(span).replaceWith($span);
-        })
-
-        $("[data-giftbotline]").off().on("click auxclick", clickHandler);
+            $($prize).replaceWith($prize);
+            })
     });
 }
 
@@ -434,7 +387,7 @@ function init() {
     var raffleName = localStorage.getItem("giftHelper_raffleName");
 
     //Run Steam key check if on win response from GiftBot
-    if (window.location.pathname.indexOf("conversations/youve-won") > -1) {
+    if (window.location.pathname.indexOf("conversations/you-won") > -1) {
         findSteamKey(href);
     }
 
@@ -494,11 +447,9 @@ init();
     head = document.getElementsByTagName("head")[0];
     style = document.createElement("style");
     style.type = "text/css";
-    var inLibraryFlag = ".inLibraryFlag {background: url(' data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAKCAYAAABi8KSDAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUNDNzBFNTUyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUNDNzBFNTYyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5Q0M3MEU1MzIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5Q0M3MEU1NDIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pv3vUKAAAAAlSURBVHjaYvz//z8DsYARpFhISAivjnfv3jGSp3jUGeQ4AyDAADZHNe2nyOBrAAAAAElFTkSuQmCC') no-repeat 4px 4px #4F95BD; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .inLibraryText { opacity: 0.7; }"; // eslint-disable-line
-    var sendPMFlag = ".sendPMFlag {background: url('  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAS0lEQVR4nGNgIAFMZmBg+E8At8AUn8Sj6AxM0TE8is9D5Q4zQAWwKUZW9J8BSQJZMboiFIXIitEV/WeEqSYEmBgYGHYQoY4YNRAAAPorL+vMPrX1AAAAAElFTkSuQmCC') no-repeat 4px 4px #FFA500; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .sendPMText { opacity: 1; } .sendGiftBotMessage{ padding: 0px !important; } .visitSteamStorePageOwnedGame{ padding: 0px !important; } .visitSteamStorePage{ padding: 0px !important; }"; // eslint-disable-line
-    var wishlistFlag = ".wishlistFlag {background: url('  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAS0lEQVR4nGNgIAFMZmBg+E8At8AUn8Sj6AxM0TE8is9D5Q4zQAWwKUZW9J8BSQJZMboiFIXIitEV/WeEqSYEmBgYGHYQoY4YNRAAAPorL+vMPrX1AAAAAElFTkSuQmCC') no-repeat 4px 4px #00FF00; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .wishlistText { opacity: 1; } .sendGiftBotMessage{ padding: 0px !important; }"; // eslint-disable-line
-    var takenFlag = ".takenFlag {background: url('   data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAZdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuMTczbp9jAAAAfElEQVQoU12OSwqAMAwFvYQg9P43KLhy60oQBEHwMM9MaUpMYDCfkb5J0mpsxmwwR9hxWxkug+IbZfpxY1GMt43SbSwdeopb8b+RH4NCcIkdt8nFLFNDgijG5yiP8RNzppy5iVHy53LmBfFoY8rUe5dPFtVAHnkC7HZJ9QOjA1ppSV8PVQAAAABJRU5ErkJggg==') no-repeat 4px 4px #6B6B6B; left: 0; top: 42px; font-size: 10px; color: #FFFFFF; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 60px; margin-right: 5px;} .takenText { opacity: 0.7; }"; // eslint-disable-line
+    var inLibraryFlag = ".inLibraryFlag {background: url(' data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAKCAYAAABi8KSDAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUNDNzBFNTUyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUNDNzBFNTYyMUM0MTFFNDk1REVFODRBNUU5RjA2MUYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5Q0M3MEU1MzIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5Q0M3MEU1NDIxQzQxMUU0OTVERUU4NEE1RTlGMDYxRiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pv3vUKAAAAAlSURBVHjaYvz//z8DsYARpFhISAivjnfv3jGSp3jUGeQ4AyDAADZHNe2nyOBrAAAAAElFTkSuQmCC') no-repeat 4px 4px #4F95BD; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 73px; margin-right: 5px;} .inLibraryText { opacity: 0.7; }"; // eslint-disable-line
+    var wishlistFlag = ".wishlistFlag {background: url('  data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAS0lEQVR4nGNgIAFMZmBg+E8At8AUn8Sj6AxM0TE8is9D5Q4zQAWwKUZW9J8BSQJZMboiFIXIitEV/WeEqSYEmBgYGHYQoY4YNRAAAPorL+vMPrX1AAAAAElFTkSuQmCC') no-repeat 4px 4px #00FF00; left: 0; top: 42px; font-size: 10px; color: #111111; height: 18px; line-height: 19px; padding: 0 0 0 18px; white-space: nowrap; z-index: 5; display: inline-block; width: 67px; margin-right: 5px;} .wishlistText { opacity: 1; } .sendGiftBotMessage{ padding: 0px !important; }"; // eslint-disable-line
 
-    style.innerHTML = inLibraryFlag + " " + sendPMFlag + " " + wishlistFlag + " " + takenFlag;
+    style.innerHTML = inLibraryFlag + " " + wishlistFlag;
     head.appendChild(style);
 }());
