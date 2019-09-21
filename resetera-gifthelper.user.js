@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.0
+// @version      2.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -293,9 +293,9 @@ function getApiKey() {
 /**
  * Handles the loading of Steam games
  * @param {string} - SteamID64
+ * @param (string) - Steam API Key
  */
-function loadOwnedGames(steamID) {
-    var apiKey = getApiKey();
+function loadOwnedGames(steamID, apiKey) {
     var service = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?";
     var params = "key=" + apiKey + "&include_appinfo=1&steamid=" + steamID + "&format=json";
     var url = service + params;
@@ -383,8 +383,6 @@ function findSteamKey(href){
  */
 function init() {
     var href = window.location.href;
-    var raffleLine = localStorage.getItem("giftHelper_raffleLine");
-    var raffleName = localStorage.getItem("giftHelper_raffleName");
 
     //Run Steam key check if on win response from GiftBot
     if (window.location.pathname.indexOf("conversations/you-won") > -1) {
@@ -394,6 +392,11 @@ function init() {
     getSteamID(function performActions(steamID) {
         if (!steamID) {
             throw new Error("There's no SteamID, aborting...");
+        }
+
+        var apiKey = getApiKey();
+        if (!apiKey) {
+            throw new Error("There's no Steam API Key, aborting...");
         }
 
         if (window.top === window.self) {
@@ -413,7 +416,7 @@ function init() {
                 if (!ownedGames.length ||
                     new Date().toDateString() !== lastUpdate ||
                     localStorage.getItem("giftHelper_version") !== GM_info.script.version) {
-                    loadOwnedGames(steamID);
+                    loadOwnedGames(steamID, apiKey);
                 } else {
                     matchGames();
                 }
@@ -423,12 +426,6 @@ function init() {
                     allPosts = giftBotPosts;
                     matchGames();
                 });
-            } else if (/conversations/.test(href)) {
-                if (raffleLine) {
-                    _.delay(function() {$("iframe").contents().find('body').html(raffleLine);}, 200);
-                    localStorage.removeItem("giftHelper_raffleLine");
-                    localStorage.removeItem("giftHelper_raffleName");
-                }
             }
         }
 
