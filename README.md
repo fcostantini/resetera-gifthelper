@@ -1,5 +1,7 @@
 # ResetEra-GiftHelper
 
+**Update September 2019: adapted to the new GiftBot incarnation**
+
 A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
 
 ## Features
