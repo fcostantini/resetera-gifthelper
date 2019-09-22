@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.2
+// @version      2.2.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -110,6 +110,15 @@ function escapeSingleQuote(text) {
 }
 
 /**
+  * Check if game was listed as Steam on GiftBot.
+  *
+  * @param {string} gameLine - line of the game on GB
+  */
+function isSteamGame(gameLine) {
+    return (gameLine.indexOf('Steam: ') > -1);
+}
+
+/**
   * From https://stackoverflow.com/a/23326020
   * Global replace, escaping characters in regex
   */
@@ -132,7 +141,7 @@ function matchGames() {
             var $prize = $(prize);
             var text = $prize.text();
             var line = text.replace('  ', ' ').replace('Click to expand...', '');
-            if (text.indexOf('Steam: ') > -1) {
+            if (isSteamGame(text)) {
                 var split = line.split("Steam: ");
                 var gameName = split[1].trim();
 
@@ -226,10 +235,9 @@ function parseAllGames(json) {
  */
 function getProfileName() {
     var steamProfileName = localStorage.getItem("giftHelper_steamProfileName");
-    window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url). \n\nNOTE: not the complete url, only the name.")
 
     if (!steamProfileName) {
-        steamProfileName = window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url)");
+        steamProfileName = window.prompt("GiftHelper says: Enter your Steam profile name (the same in your custom url). \n\nNOTE: not the complete url, only the name.");
 
         if (!steamProfileName || steamProfileName === "") {
             throw new Error("Steam profile name cannot be empty or null");
