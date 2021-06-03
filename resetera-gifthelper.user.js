@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.2.1
+// @version      2.3.0
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -373,16 +373,16 @@ function processWishlist(appids) {
 
 /**
 /**
- * Find Steam key
+ * Find Steam key in a DM page
  */
 function findSteamKey(href){
-    const message = $("#messageList")[0];
-    const text = $(message).text();
+    const $message = $($('.js-replyNewMessageContainer')[0].children[0]);
+    const text = $message.text();
     const giveaways = text.match(/\w{5}\-\w{5}\-\w{5}/);
 
     giveaways.forEach(function findKey(steamKey) {
         const redeemPage = "<a href=\"https://store.steampowered.com/account/registerkey?key=" + steamKey + "\">" + steamKey + "</a>";
-        $(message).html($(message).html().replace(steamKey, redeemPage));
+        $message.html($message.html().replace(steamKey, redeemPage));
     });
 }
 
