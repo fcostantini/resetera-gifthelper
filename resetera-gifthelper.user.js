@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.3.0
+// @version      2.3.1
 // @description  Helper functions for ResetEra's GiftBot posts
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
@@ -387,6 +387,18 @@ function findSteamKey(href){
 }
 
 /**
+/**
+ * Check if URL corresponds to a win DM
+ */
+function isWinDM(){
+    const pathname = window.location.pathname
+    const oldWinPath = "conversations/youve-won"
+    const newWinPath = "conversations/you-won"
+
+    return pathname.indexOf(newWinPath) > -1 || pathname.indexOf(oldWinPath) > -1
+}
+
+/**
  * Initializes GiftHelper
  * @throws {Error} - Error if SteamID doesn't exist
  */
@@ -394,7 +406,7 @@ function init() {
     var href = window.location.href;
 
     //Run Steam key check if on win response from GiftBot
-    if (window.location.pathname.indexOf("conversations/you-won") > -1) {
+    if (isWinDM()) {
         findSteamKey(href);
     }
 
