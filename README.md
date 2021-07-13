@@ -6,8 +6,8 @@
 
 A userscript to improve GiftBot usage in ResetEra and MetaCouncil. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
 
-## Recomendation
-Increase your browser's local storage to around 10Mb. By default, most browsers use 5Mb which is not enough to save the entire list of games on Stean. I'm going to refactor the script to address but since it's not trivial increasing the storage size will do for now.
+## Recommendation
+Increase your browser's local storage to around 10Mb. By default, most browsers use 5Mb which is not enough to save the entire list of games on Steam. I'm going to refactor the script to address this but since it's not trivial increasing the storage size will do for now.
 
 ## Features
 - "In library" highlighting for raffles.
