@@ -1,8 +1,13 @@
 # ResetEra-GiftHelper
 
+**Update July 2021: adapted for MetaCouncil**
+
 **Update September 2019: adapted to the new GiftBot incarnation**
 
-A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
+A userscript to improve GiftBot usage in ResetEra and MetaCouncil. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
+
+## Recomendation
+Increase your browser's local storage to around 10Mb. By default, most browsers use 5Mb which is not enough to save the entire list of games on Stean. I'm going to refactor the script to address but since it's not trivial increasing the storage size will do for now.
 
 ## Features
 - "In library" highlighting for raffles.
@@ -13,7 +18,7 @@ A userscript to improve GiftBot usage in ResetEra. All credit goes to PeteTNT fo
 2. Download Tampermonkey: [Firefox](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/) or [Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en).
 3. Open [this link](https://github.com/fcostantini/resetera-gifthelper/raw/master/resetera-gifthelper.user.js). *Monkey should prompt you for install.
 4. Navigate to any ResetEra thread (e.g. http://thesteamthread.com/)
-5. Follow the instructions: ResetEra should now prompt you for your Steam custom id and the Steam API key.
+5. Follow the instructions: ResetEra or MetaCouncil should now prompt you for your Steam custom id and the Steam API key.
 
 ## FAQ
 ### Where to get a SteamAPI key?

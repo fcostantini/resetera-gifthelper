@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.3.1
-// @description  Helper functions for ResetEra's GiftBot posts
+// @version      2.4.0
+// @description  Helper functions for ResetEra and NetaCouncil GiftBot posts
+// @match        *://metacouncil.com/threads/*
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
@@ -20,7 +21,7 @@
 var ownedGames = JSON.parse(localStorage.getItem("giftHelper_steamGameList")) || [];
 var lastUpdate = localStorage.getItem("giftHelper_steamGameListUpdatedOn") || "";
 var giftBotUrl = "https://www.resetera.com/conversations/add?to=GiftBot&title=entry";
-var giftBotPosts = $("[data-author='GiftBot']");
+var giftBotPosts = $("[data-author='GiftBot'], [data-author='Mona']");
 var allPosts = giftBotPosts;
 var storeUrl = "http://store.steampowered.com/search/?term=";
 var storePageUrl = "http://store.steampowered.com/app/";
@@ -134,17 +135,26 @@ String.prototype.replaceAll = function(s1, s2) {
 function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
-        var nonTakenPrizes = $elem.find(".giftbot-prize").not(".giftbot-prize--won")
-        var prizes = nonTakenPrizes.find(".giftbot-prize--title");
+        var nonTakenPrizes = $elem.find(".giftbot-prize,.giveaway-bbCode--prizeItem").not(".giftbot-prize--won")
+        var prizes = nonTakenPrizes.find(".giftbot-prize--title,.giveaway-prize--title");
 
         _.each(prizes, function(prize){
             var $prize = $(prize);
             var text = $prize.text();
-            var line = text.replace('  ', ' ').replace('Click to expand...', '');
-            if (isSteamGame(text)) {
-                var split = line.split("Steam: ");
-                var gameName = split[1].trim();
+            var line = text.replace('  ', ' ').replace('Click to expand...', '').trim();
+            var gameName = line;
+            var shouldProcess = false;
 
+            if (isSteamGame(text)) {
+                shouldProcess = true
+                var split = line.split("Steam: ");
+                gameName = split[1].trim();
+            }
+            // TODO: replace for something better
+            if (/metacouncil/.test(window.location.href)) {
+                shouldProcess = true
+            }
+            if (shouldProcess) {
                 var urlToShow = storeUrl + gameName;
                 var game = getIfOnSteam(gameName, line);
                 if (game) {
@@ -348,6 +358,9 @@ function loadWishlist() {
     GM_xmlhttpRequest({ // eslint-disable-line new-cap
         method: "GET",
         url: url,
+        headers:  {
+         "Cache-Control": "no-cache"
+        },
         onload: function onLoad(response) {
             processWishlist(JSON.parse(response.responseText).rgWishlist);
         },
