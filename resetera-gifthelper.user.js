@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.4.0
+// @version      2.4.1
 // @description  Helper functions for ResetEra and NetaCouncil GiftBot posts
 // @match        *://metacouncil.com/threads/*
 // @match        *://*.resetera.com/threads/*
@@ -135,7 +135,7 @@ String.prototype.replaceAll = function(s1, s2) {
 function matchGames() {
     allPosts.each(function matcher(idx, elem) {
         var $elem = $(elem);
-        var nonTakenPrizes = $elem.find(".giftbot-prize,.giveaway-bbCode--prizeItem").not(".giftbot-prize--won")
+        var nonTakenPrizes = $elem.find(".giftbot-prize,.giveaway-bbCode--prizeItem").not(".giftbot-prize--won,.is-delivered")
         var prizes = nonTakenPrizes.find(".giftbot-prize--title,.giveaway-prize--title");
 
         _.each(prizes, function(prize){
