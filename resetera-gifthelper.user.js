@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.4.2
-// @description  Helper functions for ResetEra and NetaCouncil GiftBot posts
+// @version      2.5.0
+// @description  Helper functions for ResetEra and MetaCouncil GiftBot posts
 // @match        *://metacouncil.com/threads/*
+// @match        *://metacouncil.com/giveaway/*
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
 // @require      http://code.jquery.com/jquery-latest.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
 // @connect      api.steampowered.com
 // @connect      steamcommunity.com
 // @connect      store.steampowered.com
@@ -29,6 +29,7 @@ var allGames = JSON.parse(localStorage.getItem("giftHelper_steamGameWholeList"))
 var lastWholeGameListUpdate = localStorage.getItem("giftHelper_steamGameWholeListUpdatedOn") || "";
 var wishlist = JSON.parse(localStorage.getItem("giftHelper_steamWishlist")) || [];
 var lastWishListUpdate = localStorage.getItem("giftHelper_steamWishlistUpdatedOn") || "";
+var mcGiveawayRegex = /giveaway\/\d+/;
 
 /**
  * Sanitizes names of the games
@@ -74,9 +75,7 @@ function getIfOnSteam(name, line) {
         return false;
     }
 
-    return allGames.find(function findGame(game) {
-        return game.sanitizedName === sanitizeName(name);
-    });
+    return allGames.find(game => game.sanitizedName === sanitizeName(name));
 }
 
 /**
@@ -94,7 +93,7 @@ function escapeHtml(text) {
         "\"": "&quot;"
     };
 
-    return text.replace(/[&<>"]/g, function renameChar(m) { return map[m]; });
+    return text.replace(/[&<>"]/g, m => map[m]);
 }
 
 /**
@@ -107,7 +106,7 @@ function escapeSingleQuote(text) {
     var map = {
         "'": "&apos;"
     };
-    return text.replace(/[']/g, function renameChar(m) { return map[m]; });
+    return text.replace(/[']/g, m => map[m]);
 }
 
 /**
@@ -125,8 +124,7 @@ function isSteamGame(gameLine) {
   */
 
 String.prototype.replaceAll = function(s1, s2) {
-    return this.replace(new RegExp(s1.replace(/[.^$*+?()[{\|]/g, '\\$&'), 'g'),
-                        s2 );
+    return this.replace(new RegExp(s1.replace(/[.^$*+?()[{\|]/g, '\\$&'), 'g'), s2);
 };
 
 var isOnMC = /metacouncil/.test(window.location.href);
@@ -135,82 +133,91 @@ var isOnMC = /metacouncil/.test(window.location.href);
  * Matches games from the giftbot posts and replaces the markup on the page
  */
 function matchGames() {
-    allPosts.each(function matcher(idx, elem) {
+    allPosts.each((_, elem) => {
         var $elem = $(elem);
         var nonTakenPrizes = $elem.find(".giftbot-prize,.giveaway-bbCode--prizeItem").not(".giftbot-prize--won,.is-delivered")
         var prizes = nonTakenPrizes.find(".giftbot-prize--title,.giveaway-prize--title");
 
-        _.each(prizes, function(prize){
-            var $prize = $(prize);
-            var existingHref = $($prize.find(".link")).attr("href")
-            var text = $prize.text();
-            var line = text.replace('  ', ' ').replace('Click to expand...', '').trim();
-            var gameName = line;
-            var shouldProcess = false;
-
-            if (isSteamGame(text)) {
-                shouldProcess = true
-                var split = line.split("Steam: ");
-                gameName = split[1].trim();
-            }
-            // TODO: replace for something better
-            if (isOnMC) {
-                shouldProcess = true
-            }
-
-            if (shouldProcess) {
-                var urlToShow = existingHref;
-                if(!existingHref){
-                    var urlToShow = storeUrl + gameName;
-                    var game = getIfOnSteam(gameName, line);
-                    if (game) {
-                        /** inside this block we can access the appid of the game with game.appid **/
-                        urlToShow = storePageUrl + game.appid;
-                    }
-                }
-
-
-                var escapedName = escapeHtml(gameName);
-
-                if (checkIfOwnedOnSteam(gameName, line)) {
-                    $prize.html(
-                        $prize.html().replaceAll(
-                            escapedName,
-                            "<span class='inLibraryFlag'>IN LIBRARY &nbsp;&nbsp</span>" +
-                            "<span class='inLibraryText'>" +
-                            "<a class='visitSteamStorePageOwnedGame' " +
-                            "title='Click me to visit the Steam store page of your game' " +
-                            "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" + "</span>"
-                        ));
-                } else {
-                    if(checkIfInSteamWishlist(gameName)) {
-                        $prize.html(
-                            $prize.html().replaceAll(
-                                escapedName,
-                                "<span class='wishlistFlag'> WISHLIST &nbsp;&nbsp</span>" +
-                                "<span class='wishlistText'>" +
-                                "<a class='visitSteamStorePage' " +
-                                "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" +
-                                "</span>"
-                            ));
-                    }
-                    else {
-                        $prize.html(
-                            $prize.html().replaceAll(
-                                escapedName,
-                                "<span class='nameWithURL'>" +
-                                "<a class='visitSteamStorePage' " +
-                                "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" +
-                                "</span>"
-                            ));
-                    }
-                }
-            }
-            $($prize).replaceWith($prize);
-        })
+        prizes.each( (_, prize) => processPrize(prize, isOnMC))
     });
+}
+
+function matchMCGAs() {
+    var rows = $(".dataList-row").not(".dataList-row--subSection");
+    rows.each((_, elem) => {
+        var $elem = $(elem);
+        var cells = $elem.find('.dataList-cell');
+        var prize = $(cells[0]);
+        var $platformElem = $(cells[1]);
+        if ($platformElem.text() !== "Steam") {
+            return
+        }
+
+        processPrize(prize, true);
+    });
+}
+
+function processPrize(prize, isSteamPlatformKnown){
+    var $prize = $(prize);
+    var existingHref = $($prize.find(".link")).attr("href")
+    var text = $prize.text();
+    var line = text.replace('  ', ' ').replace('Click to expand...', '').trim();
+    var gameName = line;
+    var isSteam = isSteamGame(text)
+
+    if (isSteam) {
+        var split = line.split("Steam: ");
+        gameName = split[1].trim();
+    }
+
+    if (isSteamPlatformKnown || isSteam) {
+        var urlToShow = existingHref;
+        if(!existingHref){
+            urlToShow = storeUrl + gameName;
+            var game = getIfOnSteam(gameName, line);
+            if (game) {
+                /** inside this block we can access the appid of the game with game.appid **/
+                urlToShow = storePageUrl + game.appid;
+            }
+        }
+
+
+        var escapedName = escapeHtml(gameName);
+
+        if (checkIfOwnedOnSteam(gameName, line)) {
+            $prize.html(
+                $prize.html().replaceAll(
+                    escapedName,
+                    "<span class='inLibraryFlag'>IN LIBRARY &nbsp;&nbsp</span>" +
+                    "<span class='inLibraryText'>" +
+                    "<a class='visitSteamStorePageOwnedGame' " +
+                    "title='Click me to visit the Steam store page of your game' " +
+                    "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a></span>"
+                ));
+        } else {
+            if(checkIfInSteamWishlist(gameName)) {
+                $prize.html(
+                    $prize.html().replaceAll(
+                        escapedName,
+                        "<span class='wishlistFlag'> WISHLIST &nbsp;&nbsp</span>" +
+                        "<span class='wishlistText'>" +
+                        "<a class='visitSteamStorePage' " +
+                        "title='Click me to visit the Steam store' " +
+                        "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a></span>"
+                    ));
+            }
+            else {
+                $prize.html(
+                    $prize.html().replaceAll(
+                        escapedName,
+                        "<span class='nameWithURL'>" +
+                        "<a class='visitSteamStorePage' " +
+                        "title='Click me to visit the Steam store' " +
+                        "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a></span>"
+                    ));
+            }
+        }
+    }
 }
 
 /**
@@ -233,7 +240,7 @@ function parseOwnedGames(json) {
  * @param {object} json - Json response
  */
 function parseAllGames(json) {
-    allGames = json.map(function map(game) {
+    allGames = json.map(game => {
         return {
             appid: game.appid,
             sanitizedName: sanitizeName(game.name)
@@ -282,7 +289,7 @@ function getSteamID(callback) {
     return GM_xmlhttpRequest({ // eslint-disable-line new-cap
         method: "GET",
         url: url,
-        onload: function onLoad(response) {
+        onload: response => {
             var xmlDoc = $.parseXML(response.responseText);
             var $xml = $(xmlDoc);
 
@@ -290,7 +297,7 @@ function getSteamID(callback) {
             localStorage.setItem("giftHelper_steamID64", steamID);
             return callback(steamID);
         },
-        onerror: function onError(err) {
+        onerror: err => {
             console.error("GiftHelper - Retrieving SteamID failed." +
                           "Make sure you have correcly entered your Steam profile name");
             console.log(err);
@@ -330,10 +337,10 @@ function loadOwnedGames(steamID, apiKey) {
     GM_xmlhttpRequest({ // eslint-disable-line new-cap
         method: "GET",
         url: url,
-        onload: function onLoad(response) {
+        onload: response => {
             parseOwnedGames(JSON.parse(response.responseText).response.games);
         },
-        onerror: function onError() {
+        onerror: () => {
             console.error("GiftHelper - Retrieving Steam Game List failed. Try again later");
         }
     });
@@ -348,10 +355,10 @@ function loadAllGames() {
     GM_xmlhttpRequest({ // eslint-disable-line new-cap
         method: "GET",
         url: url,
-        onload: function onLoad(response) {
+        onload: response => {
             parseAllGames(JSON.parse(response.responseText).applist.apps.app);
         },
-        onerror: function onError() {
+        onerror: () => {
             console.error("GiftHelper - Retrieving Whole Steam Game List failed. Try again later");
         }
     });
@@ -369,10 +376,10 @@ function loadWishlist() {
         headers:  {
             "Cache-Control": "no-cache"
         },
-        onload: function onLoad(response) {
+        onload: response => {
             processWishlist(JSON.parse(response.responseText).rgWishlist);
         },
-        onerror: function onError() {
+        onerror: () => {
             console.error("GiftHelper - Retrieving wishlist failed. Try again later");
         }
     });
@@ -384,8 +391,8 @@ function loadWishlist() {
  */
 function processWishlist(appids) {
     var wishlist = allGames.filter(function (game){
-        return _.contains(appids, game.appid);
-    }).map(function (game) {return game.sanitizedName;});
+        return appids.includes(game.appid);
+    }).map(game => game.sanitizedName);
 
     localStorage.setItem("giftHelper_steamWishlist", JSON.stringify(wishlist));
     localStorage.setItem("giftHelper_steamWishlistUpdatedOn", new Date().toDateString());
@@ -401,7 +408,7 @@ function findSteamKey(href){
     const text = $message.text();
     const giveaways = text.match(/\w{5}\-\w{5}\-\w{5}/);
 
-    giveaways.forEach(function findKey(steamKey) {
+    giveaways.forEach(steamKey => {
         const redeemPage = "<a href=\"https://store.steampowered.com/account/registerkey?key=" + steamKey + "\">" + steamKey + "</a>";
         $message.html($message.html().replace(steamKey, redeemPage));
     });
@@ -442,7 +449,7 @@ function init() {
         }
 
         if (window.top === window.self) {
-            if (/threads/.test(href) && allPosts.length) {
+            if ((/threads/.test(href) && allPosts.length) || mcGiveawayRegex.test(href)) {
                 if (!allGames.length ||
                     new Date().toDateString() !== lastWholeGameListUpdate ||
                     localStorage.getItem("giftHelper_version") !== GM_info.script.version) {
@@ -460,7 +467,11 @@ function init() {
                     localStorage.getItem("giftHelper_version") !== GM_info.script.version) {
                     loadOwnedGames(steamID, apiKey);
                 } else {
-                    matchGames();
+                    if (mcGiveawayRegex.test(href)){
+                        matchMCGAs();
+                    } else {
+                        matchGames();
+                    }
                 }
 
                 document.addEventListener("LiveThreadUpdate", function updateLiveThread() {
