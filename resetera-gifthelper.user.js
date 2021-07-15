@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         ResetEra/MetaCouncil GiftHelper
+// @name         ResetEra GiftHelper
 // @version      2.4.2
 // @description  Helper functions for ResetEra and NetaCouncil GiftBot posts
 // @match        *://metacouncil.com/threads/*
