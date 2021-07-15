@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         ResetEra GiftHelper
-// @version      2.4.1
+// @name         ResetEra/MetaCouncil GiftHelper
+// @version      2.4.2
 // @description  Helper functions for ResetEra and NetaCouncil GiftBot posts
 // @match        *://metacouncil.com/threads/*
 // @match        *://*.resetera.com/threads/*
@@ -129,6 +129,8 @@ String.prototype.replaceAll = function(s1, s2) {
                         s2 );
 };
 
+var isOnMC = /metacouncil/.test(window.location.href);
+
 /**
  * Matches games from the giftbot posts and replaces the markup on the page
  */
@@ -140,6 +142,7 @@ function matchGames() {
 
         _.each(prizes, function(prize){
             var $prize = $(prize);
+            var existingHref = $($prize.find(".link")).attr("href")
             var text = $prize.text();
             var line = text.replace('  ', ' ').replace('Click to expand...', '').trim();
             var gameName = line;
@@ -151,16 +154,21 @@ function matchGames() {
                 gameName = split[1].trim();
             }
             // TODO: replace for something better
-            if (/metacouncil/.test(window.location.href)) {
+            if (isOnMC) {
                 shouldProcess = true
             }
+
             if (shouldProcess) {
-                var urlToShow = storeUrl + gameName;
-                var game = getIfOnSteam(gameName, line);
-                if (game) {
-                    /** inside this block we can access the appid of the game with game.appid **/
-                    urlToShow = storePageUrl + game.appid;
+                var urlToShow = existingHref;
+                if(!existingHref){
+                    var urlToShow = storeUrl + gameName;
+                    var game = getIfOnSteam(gameName, line);
+                    if (game) {
+                        /** inside this block we can access the appid of the game with game.appid **/
+                        urlToShow = storePageUrl + game.appid;
+                    }
                 }
+
 
                 var escapedName = escapeHtml(gameName);
 
@@ -172,7 +180,7 @@ function matchGames() {
                             "<span class='inLibraryText'>" +
                             "<a class='visitSteamStorePageOwnedGame' " +
                             "title='Click me to visit the Steam store page of your game' " +
-                            "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" + "</span>"
+                            "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" + "</span>"
                         ));
                 } else {
                     if(checkIfInSteamWishlist(gameName)) {
@@ -183,7 +191,7 @@ function matchGames() {
                                 "<span class='wishlistText'>" +
                                 "<a class='visitSteamStorePage' " +
                                 "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" +
+                                "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" +
                                 "</span>"
                             ));
                     }
@@ -194,14 +202,14 @@ function matchGames() {
                                 "<span class='nameWithURL'>" +
                                 "<a class='visitSteamStorePage' " +
                                 "title='Click me to visit the Steam store' " +
-                                "href='" + urlToShow + "/'>" + escapeHtml(gameName) + "</a>" +
+                                "href='" + urlToShow + "'>" + escapeHtml(gameName) + "</a>" +
                                 "</span>"
                             ));
                     }
                 }
             }
             $($prize).replaceWith($prize);
-            })
+        })
     });
 }
 
@@ -359,7 +367,7 @@ function loadWishlist() {
         method: "GET",
         url: url,
         headers:  {
-         "Cache-Control": "no-cache"
+            "Cache-Control": "no-cache"
         },
         onload: function onLoad(response) {
             processWishlist(JSON.parse(response.responseText).rgWishlist);
