@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         ResetEra GiftHelper
-// @version      2.5.0
+// @version      2.5.1
 // @description  Helper functions for ResetEra and MetaCouncil GiftBot posts
 // @match        *://metacouncil.com/threads/*
 // @match        *://metacouncil.com/giveaway/*
+// @match        *://metacouncil.com/conversations/*
 // @match        *://*.resetera.com/threads/*
 // @match        *://*.resetera.com/conversations/*
 // @match        *://*.resetera.com/conversations/add?to=GiftBot*
