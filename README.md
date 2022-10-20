@@ -7,11 +7,11 @@
 A userscript to improve GiftBot usage in ResetEra and MetaCouncil. All credit goes to PeteTNT for his [NeoGAF version](https://github.com/petetnt/neogaf-monkeybot). I merely adapted it and even copied most of this README.
 
 ## Recommendation
-Increase your browser's local storage to around 10Mb. By default, most browsers use 5Mb which is not enough to save the entire list of games on Steam. I'm going to refactor the script to address this but since it's not trivial increasing the storage size will do for now.
+Increase your browser's local storage to more than 10Mb. By default, most browsers use 5Mb which is not enough to save the entire list of games on Steam. I'm going to refactor the script to address this but since it's not trivial increasing the storage size will do for now.
 
 ## Features
 - "In library" highlighting for raffles.
-- Wishlist highlighting (must be logged in the store in the same browser).
+- "Wishlist" highlighting (must be logged in the store in the same browser session).
 
 ## How-to use
 1. You must create a custom url for your Steam profile. Go to your profile, click "Edit profile" and you should see a field to input your desired custom id.
